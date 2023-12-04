@@ -28,8 +28,15 @@ class UploadLogService(private val uploadUtils: UploadUtils, private val uploadL
                 upload_date = LocalDateTime.now(),
                 url = imageUrls[index]
             )
+
+            /* Mapper 이용해 db 저장 하기 */
+            uploadLogMapper.insertUploadLog(
+                storeUrlDto.user_id,
+                storeUrlDto.file_size,
+                storeUrlDto.upload_date,
+                storeUrlDto.url);
+
             dtoList.add(storeUrlDto)
-            /* TODO Mapper 이용해 db 저장 하기 */
         }
 
         return dtoList

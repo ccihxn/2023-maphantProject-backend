@@ -5,12 +5,17 @@
 <mapper namespace="com.tovelop.maphant.mapper.CommentMapper">
     <select id="findAllComment" resultType="CommentExtDTO">
         SELECT comment.id,
+               comment.parent_id,
                comment.user_id,
                user.nickname,
-               board.id,
+               board.type_id,
+               board_type.name as type,
+               comment.board_id,
+               board.title,
                comment.body,
                comment.is_anonymous,
                comment.created_at,
+               comment.modified_at,
                comment.like_cnt,
                IFNULL(comment_like.comment_id, 0)
         FROM comment
@@ -18,12 +23,47 @@
                  JOIN user ON comment.user_id = user.id
                  LEFT OUTER JOIN comment_like
                                  ON comment.id = comment_like.comment_id and comment_like.user_id = #{userId}
+                 join board_type on board.type_id = board_type.id
         WHERE board_id = #{boardId}
           AND comment.state = 0
+        ORDER BY comment.created_at
+            LIMIT #{params.recordSize}
+        OFFSET #{params.offset}
+    </select>
+    <select id="findAllCommentByUser" resultType="CommentExtDTO">
+        SELECT comment.id,
+               comment.parent_id,
+               comment.user_id,
+               user.nickname,
+               board.type_id,
+               board_type.name as type,
+               comment.board_id,
+               board.title,
+               CASE
+                   WHEN ((#{userId} != #{targetUserId} AND comment.is_anonymous = 0) OR comment.user_id = #{userId})
+                       THEN comment.body
+                   ELSE NULL
+                   END         as body,
+               comment.is_anonymous,
+               comment.created_at,
+               comment.modified_at,
+               comment.like_cnt,
+               IFNULL(comment_like.comment_id, 0)
+        FROM comment
+                 Join board ON board.id = comment.board_id
+                 INNER JOIN user ON user.id = comment.user_id
+                 LEFT OUTER JOIN comment_like
+                                 ON comment.id = comment_like.comment_id and comment_like.user_id = #{targetUserId}
+                 join board_type on board.type_id = board_type.id
+        WHERE ((#{userId} != #{targetUserId} AND comment.is_anonymous = 0) OR comment.user_id = #{userId})
+          AND comment.user_id = #{targetUserId}
+        ORDER BY comment.created_at
+            LIMIT #{params.recordSize}
+        OFFSET #{params.offset}
     </select>
     <insert id="insertComment">
-        INSERT INTO comment(board_id, user_id, body, created_at, is_anonymous)
-        VALUES (#{board_id}, #{user_id}, #{body}, NOW(), #{is_anonymous})
+        INSERT INTO comment(board_id, user_id, parent_id, body, created_at, is_anonymous)
+        VALUES (#{board_id}, #{user_id}, #{parent_id}, #{body}, NOW(), #{is_anonymous})
     </insert>
     <delete id="deleteComment">
         UPDATE comment
@@ -32,16 +72,19 @@
     </delete>
     <update id="updateComment">
         UPDATE comment
-        SET body = #{body}
+        SET body        = #{body},
+            modified_at = NOW()
         WHERE id = #{id}
     </update>
-    <select id="getCommentById">
+    <select id="getCommentById" resultType="CommentDTO">
         SELECT id,
                user_id,
+               parent_id,
                board_id,
                body,
                is_anonymous,
                created_at,
+               modified_at,
                like_cnt,
                state
         FROM comment
@@ -68,11 +111,11 @@
           AND user_id = #{userId}
     </delete>
     <insert id="insertCommentReport">
-        INSERT INTO comment_report(comment_id, user_id, report_id)
-        VALUES (#{commentId}, #{userId}, #{reportId})
+        INSERT INTO comment_report(comment_id, user_id, report_id, reported_at)
+        VALUES (#{commentId}, #{userId}, #{reportId}, NOW())
     </insert>
     <select id="findCommentReport">
-        SELECT *
+        SELECT user_id, report_id
         FROM comment_report
         WHERE comment_report.comment_id = #{commentId}
     </select>
@@ -80,5 +123,26 @@
         INSERT INTO comment(user_id, board_id, parent_id, body, created_at, is_anonymous)
         values (#{user_id}, #{board_id}, #{parent_id}, #{body}, NOW(), #{is_anonymous})
     </insert>
-
+    <select id="getCommentCount">
+        SELECT COUNT(*)
+        FROM comment
+        WHERE board_id = #{boardId}
+    </select>
+    <update id="changeState">
+        UPDATE comment
+        SET state = #{state}
+        WHERE id = #{commentId}
+    </update>
+    <select id="getBoardUserId">
+        SELECT user_id
+        FROM board
+        WHERE id = #{boardId}
+    </select>
+    <select id="getAnonymousListByBoardId">
+        SELECT user_id, ROW_NUMBER() OVER () AS rowNum
+        FROM (SELECT DISTINCT user_id
+              FROM comment
+              WHERE is_anonymous = 1
+                AND board_id = #{boardId}) AS subquery;
+    </select>
 </mapper>

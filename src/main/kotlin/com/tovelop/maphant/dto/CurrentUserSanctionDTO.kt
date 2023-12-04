@@ -2,7 +2,7 @@ package com.tovelop.maphant.dto
 
 import java.time.LocalDateTime
 
-data class UserSanctionDTO (
+data class CurrentUserSanctionDTO (
     val userId: Int,
     val userNickname: String,
     val userEmail: String,

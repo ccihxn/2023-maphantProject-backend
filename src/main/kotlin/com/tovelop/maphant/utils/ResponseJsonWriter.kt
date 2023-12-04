@@ -12,5 +12,9 @@ class ResponseJsonWriter {
             this.characterEncoding = "UTF-8"
             this.writer.write(objMapper.writeValueAsString(obj))
         }
+
+        fun writeJSON(obj: Any): String {
+            return objMapper.writeValueAsString(obj)
+        }
     }
 }

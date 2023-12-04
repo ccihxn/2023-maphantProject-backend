@@ -21,9 +21,26 @@
                 #{receiver_is_deleted})
     </insert>
 
-    <update id="updateRoomLastContent">
+    <update id="updateRoomWhenSendDm">
         UPDATE room
-        SET last_content = #{content}
+        SET time = #{time},
+            last_content = #{content},
+            sender_is_deleted = 0,
+            receiver_is_deleted = 0,
+            sender_unread_count = IF(#{isSender},sender_unread_count,sender_unread_count+1),
+            receiver_unread_count = IF(#{isSender},receiver_unread_count+1,receiver_unread_count)
+        WHERE id = #{room_id}
+    </update>
+
+    <update id="updateSenderUnreadCountAndLastContent">
+        UPDATE room
+        SET last_content = #{content}, receiver_unread_count = receiver_unread_count+1
+        WHERE id = #{room_id}
+    </update>
+
+    <update id="updateReceiverUnreadCountAndLastContent">
+        UPDATE room
+        SET last_content = #{content}, sender_unread_count = sender_unread_count+1
         WHERE id = #{room_id}
     </update>
 
@@ -42,7 +59,8 @@
                r1.sender_is_deleted,
                r1.receiver_is_deleted,
                u1.id       AS other_id,
-               u1.nickname AS other_nickname
+               u1.nickname AS other_nickname,
+               r1.sender_unread_count as unread_count
         FROM room r1
                  INNER JOIN user u1 ON r1.receiver_id = u1.id
         WHERE sender_id = #{user_id}
@@ -56,7 +74,8 @@
                r1.sender_is_deleted,
                r1.receiver_is_deleted,
                u1.id       AS other_id,
-               u1.nickname AS other_nickname
+               u1.nickname AS other_nickname,
+               r1.receiver_unread_count as unread_count
         FROM room r1
                  INNER JOIN user u1
                             ON r1.sender_id = u1.id
@@ -66,16 +85,77 @@
     </select>
 
 
-    <update id="updateSenderIsDeleted">
+    <update id="updateWhenSenderIsDeleted">
         UPDATE room
-        SET sender_is_deleted = true
+        SET sender_is_deleted = true,
+            sender_unread_count = 0,
+            sender_dm_cursor = (
+                SELECT MAX(id) + 1
+                FROM dm
+                WHERE room_id = #{room_id}
+            )
+        WHERE id = #{room_id}
+    </update>
+
+    <update id="updateWhenReceiverIsDeleted">
+        UPDATE room
+        SET receiver_is_deleted = true,
+            receiver_unread_count = 0,
+            receiver_dm_cursor = (
+                SELECT MAX(id) + 1
+                FROM dm
+                WHERE room_id = #{room_id}
+            )
+        WHERE id = #{room_id}
+    </update>
+
+    <update id="updateSenderDmCursor">
+        UPDATE room
+        SET sender_dm_cursor = (
+            SELECT MAX(id) + 1
+            FROM dm
+            WHERE room_id = #{room_id}
+        )
+        WHERE id = #{room_id}
+    </update>
+
+    <update id="updateReceiverDmCursor">
+        UPDATE room
+        SET receiver_dm_cursor = (
+            SELECT MAX(id) + 1
+            FROM dm
+            WHERE room_id = #{room_id}
+        )
+        WHERE id = #{room_id}
+    </update>
+
+    <update id="updateSenderIsDelete">
+        UPDATE room
+        SET sender_is_deleted = false
         WHERE id = #{room_id}
     </update>
 
     <update id="updateReceiverIsDeleted">
         UPDATE room
-        SET receiver_is_deleted = true
+        SET receiver_is_deleted = false
         WHERE id = #{room_id}
     </update>
+
+    <update id="updateRoomTime">
+        UPDATE room
+        SET time = #{time}
+        WHERE id = #{room_id}
+    </update>
+
+    <select id="findUnReadDmCount">
+        select SUM(
+                       CASE
+                           WHEN sender_id = #{user_id} THEN sender_unread_count
+                           WHEN receiver_id = #{user_id} THEN receiver_unread_count
+                           END
+                   )
+        FROM room
+        WHERE sender_id = #{user_id} OR receiver_id = #{user_id}
+    </select>
 
 </mapper>

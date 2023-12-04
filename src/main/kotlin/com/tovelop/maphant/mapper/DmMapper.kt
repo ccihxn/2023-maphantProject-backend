@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 @Mapper
 @Repository
 interface DmMapper {
-    fun createDm(dmDto: DmDto): Boolean
+    fun createDm(dmDto: DmDto): Int
     fun findDmList(room_id: Int, vararg visible: VisibleChoices): List<DmDto>
 
     fun findDmListWithPaging(
@@ -20,10 +20,32 @@ interface DmMapper {
         vararg visible: VisibleChoices
     ): List<ResultDmDto>
 
+    fun findDmListWithPaging(
+        isSender: Boolean,
+        room_id: Int,
+        params: PagingDto,
+        cursor:Int
+    ): List<ResultDmDto>
+
+    fun findDmListWithCursorBasedPaging(
+        isSender: Boolean,
+        room_id: Int,
+        pagingCursor:Int,
+        dmCursor:Int,
+        limit:Int
+    ): List<ResultDmDto>
+
     fun updateNotReadDm(room_id: Int, is_from_sender: Boolean): Boolean
+
+    fun updateSenderUnreadDmZero(room_id: Int)
+
+    fun updateReceiverUnreadDmZero(room_id: Int)
 
     //roomId에 해당하는 대화방의 Dm객체의 oldVisible을 newVisible로 바꿔준다
     fun updateDmVisible(room_id: Int, oldVisible: VisibleChoices, newVisible: VisibleChoices): Boolean
 
     fun findDmCount(room_id: Int, vararg visible: VisibleChoices): Int
+    fun findDmCount(room_id: Int, cursor: Int): Int
+
+    fun findLastDmId(room_id: Int):Int
 }

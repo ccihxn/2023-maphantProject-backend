@@ -3,6 +3,23 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tovelop.maphant.mapper.UserMapper">
+    <insert id="withDrawUser">
+        INSERT INTO log_user (email, withdraw_at)
+        VALUES (#{email}, NOW())
+    </insert>
+    <update id="updateWithDrawUser">
+        UPDATE user user
+            JOIN log_user log_user
+        on user.email = log_user.email
+            SET user.email = log_user.id
+        WHERE log_user.email = #{email}
+    </update>
+    <update id="updateUserStateByUserId">
+        UPDATE user
+        SET state           = #{state},
+            lastmodified_at = NOW()
+        WHERE id = #{userId}
+    </update>
     <select id="countSameEmails" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM user
@@ -16,7 +33,7 @@
     <select id="countSamePhoneNum" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM user
-        WHERE ph_num   = #{phoneNum};
+        WHERE ph_num = #{phoneNum};
     </select>
     <select id="findUserByEmail" resultType="UserDTO">
         SELECT *
@@ -25,15 +42,12 @@
         #{email}
     </foreach> ;
     </select>
-    <insert id="insertUser">
-        INSERT INTO user (email, password, nickname, name, ph_num , sno , role, created_at, state, agreed_at,
+    <insert id="insertUser" parameterType="UserDto" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (email, password, nickname, name, ph_num, sno, role, created_at, state, agreed_at,
                           lastmodified_at, univ_id)
         VALUES (#{email}, #{password}, #{nickname}, #{name}, #{phNum}, #{sno}, #{role}, NOW(), #{state}, NOW(),
                 NOW(), #{univId})
     </insert>
-    <update id="updateUser" databaseId="id"
-    >
-    </update>
     <select id="findEmailBysNo" resultType="String">
         SELECT email
         FROM user
@@ -43,40 +57,60 @@
     <select id="findUniversityIdBy" resultType="int">
         SELECT id
         FROM univ
-        WHERE name = #{univName}
+        WHERE name = #{univName} LIMIT 1
     </select>
     <select id="findUniversityUrlBy" resultType="String">
         SELECT link
         FROM univ
-        WHERE id = #{univId}
+        WHERE id = #{univId} LIMIT 1
     </select>
     <select id="isUniversityExist" resultType="Boolean">
         SELECT EXISTS(SELECT * FROM univ WHERE id = #{universityId})
     </select>
     <update id="updateUserState">
         UPDATE user
-        SET state              = #{state},
+        SET state           = #{state},
             lastmodified_at = NOW()
         WHERE email = #{email}
     </update>
     <update id="updateUserPasswordByEmail">
         UPDATE user
-        SET password           = #{password},
+        SET password        = #{password},
             lastmodified_at = NOW()
         WHERE email = #{email}
     </update>
     <update id="updateUserNicknameByEmail">
         UPDATE user
-        SET nickname           = #{nickname},
+        SET nickname        = #{nickname},
             lastmodified_at = NOW()
         WHERE email = #{email}
     </update>
     <update id="updateUserPhoneNumByEmail">
         UPDATE user
-        SET ph_num             = #{phNum},
+        SET ph_num          = #{phNum},
             lastmodified_at = NOW()
         WHERE email = #{email}
     </update>
+    <select id="findCategoryIdByEmail" resultType="Int">
+        select user_category_major.category_id
+        from user_category_major
+                 join user on #{email} = user.email and user_category_major.user_id = user.id
+    </select>
+    <select id="findCategoryIdByName" resultType="Int">
+        select id
+        from category
+        where name = #{name}
+    </select>
+    <select id="findMajorIdByEmail" resultType="Int">
+        select user_category_major.major_id
+        from user_category_major
+                 join user on #{email} = user.email and user_category_major.user_id = user.id
+    </select>
+    <select id="findMajorIdByName" resultType="Int">
+        select id
+        from major
+        where name = #{name}
+    </select>
     <select id="findPasswordByEmail" resultType="String">
         SELECT password
         FROM user
@@ -93,38 +127,45 @@
         WHERE email = #{email}
     </select>
     <select id="getAllCategories" resultType="String">
-        SELECT name
+        SELECT distinct name
         FROM category
     </select>
     <select id="getAllMajors" resultType="String">
-        SELECT name
+        SELECT distinct name
         FROM major
     </select>
     <select id="getAllUnivNames" resultType="String">
-        SELECT name
+        SELECT distinct name
         FROM univ
     </select>
     <insert id="insertCategoryIdMajorIdByUserId">
         INSERT INTO user_category_major(user_id, category_id, major_id)
         VALUES (#{userId}, #{categoryId}, #{majorId})
     </insert>
+    <delete id="deleteCategoryIdMajorIdByUserId">
+        DELETE
+        FROM user_category_major
+        WHERE user_id = #{userId}
+          AND category_id = #{categoryId}
+          AND major_id = #{majorId}
+    </delete>
     <select id="findUserIdByUserEmail" resultType="Int">
         SELECT id
         FROM user
-        WHERE email=#{email}
+        WHERE email = #{email}
     </select>
     <select id="findCategoryIdByCategoryName" resultType="Int">
         SELECT id
         FROM category
-        WHERE name=#{categoryName}
+        WHERE name = #{categoryName} LIMIT 1
     </select>
     <select id="findMajorIdByMajorName" resultType="Int">
         SELECT id
         FROM major
-        WHERE name=#{majorName}
+        WHERE name = #{majorName} LIMIT 1
     </select>
 
-    <select id="findIdBy" resultType="String">
+    <select id="findNicknameIdBy" resultType="String">
         SELECT nickname
         FROM user
         WHERE id = #{userId}
@@ -134,4 +175,15 @@
         set role = #{role}
         where id = #{id};
     </update>
+    <select id="searchUserByNickname" resultType="com.tovelop.maphant.dto.user.UserNicknameDTO">
+        SELECT id, nickname
+        FROM user
+        WHERE nickname like CONCAT(#{nickname}, '%') LIMIT 50
+    </select>
+
+    <select id="countById">
+        SELECT COUNT(*)
+        FROM user
+        WHERE id = #{userId}
+    </select>
 </mapper>

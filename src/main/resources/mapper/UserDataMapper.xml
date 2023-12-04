@@ -3,9 +3,85 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tovelop.maphant.mapper.UserDataMapper">
-    <select id="findUserByEmail" resultType="UserDataDTO">
-        select id, email, password, name, nickname, role, category_id categoryId, major_id majorId
-        from user, user_category_major
-        where id = user_id and email = '${email}';
+    <resultMap id="userData" type="UserDataDTO">
+        <result property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="password" column="password"/>
+        <result property="name" column="name"/>
+        <result property="nickname" column="nickname"/>
+        <result property="studentNo" column="sno"/>
+        <result property="role" column="role"/>
+        <result property="state" column="state"/>
+        <result property="profileImg" column="profile_img"/>
+        <collection property="category" ofType="UserDataCategoryDTO">
+            <result property="categoryId" column="category_id"/>
+            <result property="categoryName" column="category_name"/>
+            <result property="majorId" column="major_id"/>
+            <result property="majorName" column="major_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="findUserByEmail" resultMap="userData">
+        select u.id,
+               email,
+               password,
+               u.name,
+               nickname,
+               sno,
+               role,
+               ucm.user_id,
+               ucm.category_id,
+               c.name as category_name,
+               ucm.major_id,
+               m.name as major_name,
+               state,
+               p.profile_img
+        from user u
+                 left join user_category_major ucm on u.id = ucm.user_id
+                 left join category c on c.id = ucm.category_id
+                 left join major m on m.id = ucm.major_id
+                 left join profile p on u.id = p.user_id
+        where email = '${email}';
+    </select>
+
+    <resultMap id="updateUserData" type="UserDataDTO">
+        <result property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="password" column="password"/>
+        <result property="name" column="name"/>
+        <result property="nickname" column="nickname"/>
+        <result property="studentNo" column="sno"/>
+        <result property="role" column="role"/>
+        <result property="state" column="state"/>
+        <result property="profileImg" column="profile_img"/>
+        <collection property="category" ofType="UserDataCategoryDTO">
+            <result property="categoryId" column="category_id"/>
+            <result property="categoryName" column="category_name"/>
+            <result property="majorId" column="major_id"/>
+            <result property="majorName" column="major_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="updateUserDataByUserId" resultMap="updateUserData">
+        select u.id,
+               email,
+               password,
+               u.name,
+               nickname,
+               sno,
+               role,
+               ucm.user_id,
+               ucm.category_id,
+               c.name as category_name,
+               ucm.major_id,
+               m.name as major_name,
+               state,
+               p.profile_img
+        from user u
+                 left join user_category_major ucm on u.id = ucm.user_id
+                 left join category c on c.id = ucm.category_id
+                 left join major m on m.id = ucm.major_id
+                 left join profile p on u.id = p.user_id
+        where u.id = '${userId}';
     </select>
 </mapper>

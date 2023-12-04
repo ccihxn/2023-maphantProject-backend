@@ -28,14 +28,13 @@ class AwsS3Controller(
             throw MaxUploadSizeExceededException(5)
         }
         val auth = SecurityContextHolder.getContext().authentication!! as TokenAuthToken
-        val userId: Int = auth.getUserData().id!!
+        val userId: Int = auth.getUserId()!!
 
         // 서비스에서 여러 파일 aws에 올려서 url 받기
         val imageUrls: List<String> = awsS3Service.uploadFiles(files)
         //db저장 후 dto 반환
         return uploadLogService.storeUrls(userId, imageUrls, files)
     }
-
 
 
 }

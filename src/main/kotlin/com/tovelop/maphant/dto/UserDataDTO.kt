@@ -1,17 +1,14 @@
 package com.tovelop.maphant.dto
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
-
-data class UserDataDTO @JsonCreator constructor(
-    @JsonProperty("id") val id: Int,
-    @JsonProperty("email") val email: String,
-    @JsonProperty("password") var password: String,
-    @JsonProperty("name") val name: String,
-    @JsonProperty("nickname") val nickname: String,
-    @JsonProperty("role") val role: String,
-    @JsonProperty("categoryId") val categoryId: Int,
-    @JsonProperty("majorId") val majorId: Int,
-) {
-    constructor(): this(0, "", "", "", "", "",0, 0)
-}
+data class UserDataDTO(
+    val id: Int = 0,
+    val email: String = "",
+    var password: String = "",
+    val name: String = "",
+    val nickname: String = "",
+    val studentNo: String = "",
+    val role: String = "",
+    val state: Int = 0,
+    val category: List<UserDataCategoryDTO> = mutableListOf(),
+    val profileImg: String? = null,
+)

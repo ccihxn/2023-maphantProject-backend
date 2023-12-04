@@ -1,13 +1,14 @@
 package com.tovelop.maphant.service
 
 import com.tovelop.maphant.dto.UserDTO
+import com.tovelop.maphant.mapper.ProfileMapper
 import com.tovelop.maphant.mapper.UserMapper
 import com.tovelop.maphant.utils.ValidationHelper
 import org.springframework.stereotype.Service
 
 
 @Service
-class UserService(val mapper: UserMapper) {
+class UserService(val mapper: UserMapper, val profileMapper: ProfileMapper) {
     fun insertCategoryMajorByEmail(email: String, category: String, major: String) {
         mapper.insertCategoryIdMajorIdByUserId(
             mapper.findUserIdByUserEmail(email),
@@ -15,6 +16,11 @@ class UserService(val mapper: UserMapper) {
             mapper.findMajorIdByMajorName(major)
         )
     }
+
+    fun updateUserStateByUserId(userId: Int, state: Int) {
+        mapper.updateUserStateByUserId(userId, state)
+    }
+
     fun getAllCategories() = mapper.getAllCategories()
     fun getAllMajors() = mapper.getAllMajors()
     fun getAllUnivNames() = mapper.getAllUnivNames()
@@ -24,6 +30,8 @@ class UserService(val mapper: UserMapper) {
     fun updateUserState(email: String, state: Int) {
         mapper.updateUserState(email, state)
     }
+
+    fun searchUserByNickname(nickname: String) = mapper.searchUserByNickname(nickname)
 
     fun updateUserPasswordByEmail(email: String, newPassword: String) {
         mapper.updateUserPasswordByEmail(email, newPassword)
@@ -37,6 +45,32 @@ class UserService(val mapper: UserMapper) {
         mapper.updateUserPhoneNumByEmail(email, newPhoneNum)
     }
 
+    fun insertUserCategoryMajorByEmail(email: String, newCategoryId: Int, newMajorId: Int) {
+        val userId = mapper.findUserIdByUserEmail(email)
+        mapper.insertCategoryIdMajorIdByUserId(userId, newCategoryId, newMajorId)
+    }
+
+    fun deleteCategoryIdMajorIdByUserId(email: String, categoryId: Int, majorId: Int) {
+        val userId = mapper.findUserIdByUserEmail(email)
+        mapper.deleteCategoryIdMajorIdByUserId(userId, categoryId, majorId)
+    }
+
+    fun findCategoryIdByEmail(email: String): List<Int> {
+        return mapper.findCategoryIdByEmail(email)
+    }
+
+    fun findCategoryIdByName(name: String): Int {
+        return mapper.findCategoryIdByName(name)
+    }
+
+    fun findMajorIdByEmail(email: String): List<Int> {
+        return mapper.findMajorIdByEmail(email)
+    }
+
+    fun findMajorIdByName(name: String): Int {
+        return mapper.findMajorIdByName(name)
+    }
+
     fun signUp(user: UserDTO): Boolean {
         insertUser(user)
         return true
@@ -44,7 +78,7 @@ class UserService(val mapper: UserMapper) {
 
     fun login(email: String, password: String): String? {
         // 로그인 로직
-        val user = getUser(listOf(email))
+        val user = getUser(email)
         if (user != null && user.password == password) {
             return user.id.toString()
         }
@@ -53,13 +87,12 @@ class UserService(val mapper: UserMapper) {
 
     fun matchEmail(email: String, univId: Int?): Boolean {
         val universityName = this.extractFromEmail(email)
-        val universityUrl = this.extractFromUrl(mapper.findUniversityUrlBy(univId))
-        return universityName == universityUrl
+        return universityName == mapper.findUniversityUrlBy(univId)
     }
 
-    fun getUser(emails: List<String>): UserDTO? {
+    fun getUser(email: String): UserDTO {
         // 사용자 조회 로직
-        return mapper.findUserByEmail(emails).firstOrNull()
+        return mapper.findUserByEmail(listOf(email))[0]
     }
 
     fun insertUser(user: UserDTO) {
@@ -112,13 +145,19 @@ class UserService(val mapper: UserMapper) {
         return matchResult?.value
     }
 
-    fun extractFromUrl(url: String): String? {
-        val pattern = """(?<=\/\/|www\.)[^\.]+\.(ac\.kr|edu)""".toRegex()
-        val matchResult = pattern.find(url)
-        return matchResult?.value
+    fun updateUserRole(role: String, id: Int) {
+        mapper.updateUserRole(role, id)
     }
 
-    fun updateUserRole(role: String, id: Int){
-        mapper.updateUserRole(role, id)
+    fun withDrawUser(email: String) {
+        mapper.withDrawUser(email)
+    }
+
+    fun updateWithDrawUser(email: String) {
+        mapper.updateWithDrawUser(email)
+    }
+
+    fun findUserIdByUserEmail(email: String): Int{
+        return mapper.findUserIdByUserEmail(email)
     }
 }

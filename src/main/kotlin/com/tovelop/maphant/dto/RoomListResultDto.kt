@@ -12,4 +12,5 @@ data class RoomListResultDto(
     var receiver_is_deleted: Boolean,
     val other_id: Int,
     val other_nickname: String,
+    val unread_count: Int,
 )
